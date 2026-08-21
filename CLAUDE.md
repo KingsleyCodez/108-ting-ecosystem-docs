@@ -12,7 +12,7 @@ Before writing a fix, search — **including closed issues**, because a closed o
 record that this was already resolved:
 
 ```
-gh issue list -R 108-Plaza/108-ting-ecosystem-docs --state all --search "<symptom keywords>"
+gh issue list --state all --search "<symptom keywords>"
 ```
 
 If there is none, open one **in the repo where the PR will merge** (`Fixes #N` only
