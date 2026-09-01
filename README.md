@@ -12,6 +12,9 @@ contracts, and active-work status.
   measured quality baseline for `pos108-core`.
 - [`DEPLOYMENT_STANDARD_K3S.md`](DEPLOYMENT_STANDARD_K3S.md) — k3s deployment standard.
 - [`PRODUCTION_READINESS_BAR.md`](PRODUCTION_READINESS_BAR.md) — what "ready" means.
+- [`VERSIONING_STANDARD.md`](VERSIONING_STANDARD.md) — what is actually running in
+  front of a customer: the `1.MINOR.PATCH` number, the channel, and the runtime
+  surface every app must expose. Binding on every app.
 
 > Note: several docs here link to `ENGINEERING_CONSTITUTION.md`, which has never
 > existed in this repo or anywhere in the org — a dangling reference, not a moved
