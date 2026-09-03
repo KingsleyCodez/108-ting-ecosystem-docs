@@ -198,21 +198,23 @@ A repo is compliant when all seven hold:
       `toBeDefined()` on a date constructor against hardcoded fallbacks are tautologies and do not
       satisfy compliance. Tests must prove build metadata is passed into the binary/bundle.
 
-### Current standing — 2026-09-01
+### Current standing — survey updated 2026-09-02 (#17)
 
 | repo | §2 number | §3 runtime surface | §4 helm deploy |
 |---|---|---|---|
-| `pos108-core` | ✗ `0.1.0` frozen | ✅ `/health/ready`, full payload | ✅ |
+| `pos108-core` | ✗ `0.1.0` frozen | ✅ `/health/ready`, full payload | ✗ drift (~2.5 wks) |
 | `pos108-terminal` | ✅ real, moves | ✅ update check | n/a (installed app) |
-| `pos108-admin` | ✗ frozen | ✗ **none at all** | ⏳ `#543` in review |
-| `pos108-orders` | ✗ frozen | ? not surveyed | ? |
-| `pos108-store` | ✗ `0.0.0` | ? not surveyed | ? |
-| `pos108-sell` | ✗ frozen | ? not surveyed | ? |
+| `pos108-admin` | ✗ frozen | ✗ fake fallback (`builtAt` fixed to `2026-09-01T00:00:00Z`) | ✅ `#543` merged |
+| `pos108-orders` | ✗ frozen | ✗ missing env, fallback tautology | ✗ drift (~1 mo) |
+| `pos108-store` | ✗ `0.0.0` | ✗ static `version.json`, missing `VITE_APP_BUILD` | ✗ drift (~3 wks) |
+| `pos108-sell` | ✗ frozen | ✗ fake fallback (`builtAt` computed on every request) | ✗ drift (~3 wks) |
 | `park108` | ✗ frozen | ? not surveyed | ? |
 | `jh-api` | grandfathered | ? not surveyed | ✅ |
 
-`?` means **not yet surveyed** — not "compliant". Filling those cells is the first task
-this document creates.
+`?` means **not yet surveyed** — not "compliant". The 2026-09-02 survey (#17) proved that
+all four web frontends (`sell`, `admin`, `store`, `orders`) relied on fake fallbacks and
+tautological assertions rather than true injection. Replacing those fallbacks with `"unknown"`
+and requiring real injection in CI is tracked in each repo's issue.
 
 ---
 
