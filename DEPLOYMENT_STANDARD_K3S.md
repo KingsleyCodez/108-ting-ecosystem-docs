@@ -163,8 +163,7 @@ depending on how the repo is shaped today:
    merge `main → deploy/staging`.
 3. The push to `deploy/staging` triggers the image-build workflow → publishes
    `ghcr.io/108-plaza/<svc>:sha-<short>` (+ `:staging`).
-4. `helm upgrade --reuse-values --set image.tag=sha-<short>` the staging release
-   (separate, owner-gated step — §4 "CI → deploy").
+4. Deploy through Helm (never around it): run `helm upgrade <rel> "$CHART_PATH" -n <ns> --reset-then-reuse-values --set image.repository="ghcr.io/108-plaza/<svc>" --set image.tag="sha-<short>" --wait --timeout 3m`, followed by `kubectl rollout status` and verifying `readyReplicas >= 1` (see [HELM_DEPLOY_PORTING_GUIDE.md](file:///Users/yuth/Documents/108-Ting-Ecosystem/HELM_DEPLOY_PORTING_GUIDE.md)). Passing both repo and tag on every run ensures the release self-corrects and prevents drift.
 
 **Uniform across the ecosystem.** Same branch name (`deploy/staging`), same trigger, in
 every image-building repo: **pos108, pos108-admin, pos108-orders, Payment-Platform,
