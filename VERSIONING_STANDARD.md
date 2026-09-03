@@ -161,8 +161,8 @@ because it is trusted.
   leaves the helm release believing something else; that is exactly how `tenant-admin`
   drifted 32 days (`pos108-admin#541`) and how `jh-api` drifted onto a package name from
   two renames ago (`jh-api#373`). Pass the image on every deploy —
-  `helm upgrade <rel> <chart> --reuse-values --set image.tag=sha-<short>` — so the release
-  is self-correcting.
+  `helm upgrade <rel> <chart> --reset-then-reuse-values --set image.repository=... --set image.tag=sha-<short>` — so the release
+  is self-correcting (see [HELM_DEPLOY_PORTING_GUIDE.md](HELM_DEPLOY_PORTING_GUIDE.md)).
 - **Never write a floating tag into a values file.** `latest` and a bare chart
   `appVersion` are both tags this ecosystem does not publish; a values file that names one
   is a rollback waiting for someone to run `helm upgrade` for an unrelated reason
