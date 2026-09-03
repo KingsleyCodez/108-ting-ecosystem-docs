@@ -172,7 +172,7 @@ not report zero findings, and a claim that "the gate already covers X" must matc
 what the code actually covers, or the advisory layer is told to stay quiet about a
 hole that is really there.
 
-Required gates, in CI, on every PR:
+Required gates, in CI, on every PR (see [CI_STANDARD_AND_WORKFLOWS.md](CI_STANDARD_AND_WORKFLOWS.md) for ecosystem workflow catalog and runner allocation rules):
 
 - `cargo clippy --all-targets -- -D warnings` — already in place; keep it hard.
 - **Unused dependencies** (`cargo-machete`) — an agent adding a crate it ends up
