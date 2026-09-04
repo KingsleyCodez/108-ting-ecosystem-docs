@@ -11,6 +11,7 @@ contracts, and active-work status.
   supervise. Seven rules, each with the incident that produced it, plus the
   measured quality baseline for `pos108-core`.
 - [`DEPLOYMENT_STANDARD_K3S.md`](DEPLOYMENT_STANDARD_K3S.md) — k3s deployment standard.
+- [`CI_STANDARD_AND_WORKFLOWS.md`](CI_STANDARD_AND_WORKFLOWS.md) — ecosystem CI standard, runner allocation strategy, and workflow catalog for remaining repos.
 - [`PRODUCTION_READINESS_BAR.md`](PRODUCTION_READINESS_BAR.md) — what "ready" means.
 - [`VERSIONING_STANDARD.md`](VERSIONING_STANDARD.md) — what is actually running in
   front of a customer: the `1.MINOR.PATCH` number, the channel, and the runtime
