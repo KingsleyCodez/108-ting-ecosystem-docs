@@ -225,7 +225,9 @@ jobs:
       - name: Lint with ruff
         run: ruff check .
       - name: Test with pytest
-        run: pytest
+        # exit code 5 = "no tests collected" — treat as pass until the repo has tests,
+        # so the gate goes red for real failures only
+        run: pytest || [ $? -eq 5 ]
 ```
 
 ---
@@ -256,7 +258,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Test
-        run: cargo test --if-present
+        run: cargo test --all-targets
 
   python-test:
     name: "pytest"
@@ -269,7 +271,11 @@ jobs:
       - name: Test
         run: |
           pip install pytest
-          if [ -d tests ] || [ -f test_*.py ]; then pytest; fi
+          if [ -d tests ] || find . -maxdepth 2 -name 'test_*.py' | grep -q .; then
+            pytest
+          else
+            echo "no python tests found — skipping"
+          fi
 ```
 
 ---
