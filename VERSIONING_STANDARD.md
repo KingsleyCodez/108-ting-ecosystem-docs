@@ -87,6 +87,12 @@ The channel is **part of the reported version**, never part of the number:
 `1.95.3 (release)`. A build that cannot say which lane it came from has caused a real
 incident already — an admin build sat on staging while everyone believed it was on prod.
 
+- **`channel` belongs to the deployment lane, not the image.** The exact same image artifact
+  (`sha-<short>`) is promoted from staging to release. Therefore, `channel` must never be
+  baked into Docker image build arguments or guessed from `NODE_ENV` (`NODE_ENV=production` is
+  set in both staging and prod). It must be provided at deployment time via Helm values per
+  namespace/lane.
+
 ---
 
 ## 3. Every app must answer for itself — mandatory
@@ -125,6 +131,25 @@ sentence. It must report the version of the API it is talking to as well —
 `admin 1.95.3 · core 1.95.1 · shop 365`. Without the second half, a report of "the admin is
 broken" cannot be placed on either side of the boundary.
 
+### Missing or unknown values — strict rules (Owner decision 2026-09-02, #15 / #17)
+
+1. **All four identity fields (`version`, `build`, `builtAt`, `channel`) must always be present.**
+   Never omit a field when its value is unavailable (e.g. `if let Some(ch) = channel` omitting
+   the key is forbidden; see `pos108-core#1114`). Omitting keys breaks typed API contracts and
+   leaves callers unable to distinguish an unpopulated field from a legacy pre-standard build.
+2. **The only legal representation of an unpopulated field is the string `"unknown"`.**
+   Never use `null`, empty strings `""`, or `0`.
+3. 🔴 **Never fabricate plausible fake fallbacks.**
+   A value that looks plausible is worse than no value because it is trusted and deceives operators.
+   Specifically forbidden:
+   - **Dynamic `builtAt`:** Setting `builtAt` to the current timestamp on every request (`pos108-sell` incident).
+   - **Static hardcoded `builtAt`:** Hardcoding a past date like `'2026-09-01T00:00:00Z'` (`108heros-web#16`, `pos108-admin`).
+   - **Fake commit SHA:** Emitting `build: "sha-local"` on deployed environments.
+   - **Guessed channel:** Inferring `channel` from `NODE_ENV`.
+4. **`"unknown"` is only acceptable during local development.**
+   In any deployed environment (`staging` or `release`), `"unknown"` indicates a broken build or
+   deployment pipeline and is treated as a defect.
+
 ---
 
 ## 4. The version must survive the trip to the cluster
@@ -136,7 +161,7 @@ because it is trusted.
   leaves the helm release believing something else; that is exactly how `tenant-admin`
   drifted 32 days (`pos108-admin#541`) and how `jh-api` drifted onto a package name from
   two renames ago (`jh-api#373`). Pass the image on every deploy —
-  `helm upgrade <rel> <chart> --reuse-values --set image.tag=sha-<short>` — so the release
+  `helm upgrade <rel> <chart> --reset-then-reuse-values --set image.repository=... --set image.tag=sha-<short>` — so the release
   is self-correcting.
 - **Never write a floating tag into a values file.** `latest` and a bare chart
   `appVersion` are both tags this ecosystem does not publish; a values file that names one
@@ -159,31 +184,37 @@ that a migration actually ran, as opposed to an image merely rolling.
 
 ## 6. Compliance
 
-A repo is compliant when all five hold:
+A repo is compliant when all seven hold:
 
 - [ ] the number follows §2 and lives in the language's own manifest
       (`Cargo.toml` / `package.json` / `pubspec.yaml`) — one place, not two
-- [ ] the running app reports `version` / `build` / `builtAt` / `channel` per §3
+- [ ] the running app reports `version` / `build` / `builtAt` / `channel` per §3 (all four fields present, `"unknown"` if missing)
 - [ ] a front end also reports the version of the backend it is bound to
 - [ ] deploy goes through helm with the image passed explicitly (§4)
 - [ ] **CI fails if the reported version does not match the manifest** — without this the
       field drifts and we are back to decoration
+- [ ] **CI fails if runtime identity reports `"unknown"` on `staging` or `release` builds**
+- [ ] **Tests assert real injection, not fallbacks.** Tests like `expect(info.build).toBeDefined()` or
+      `toBeDefined()` on a date constructor against hardcoded fallbacks are tautologies and do not
+      satisfy compliance. Tests must prove build metadata is passed into the binary/bundle.
 
-### Current standing — 2026-09-01
+### Current standing — survey updated 2026-09-02 (#17)
 
 | repo | §2 number | §3 runtime surface | §4 helm deploy |
 |---|---|---|---|
-| `pos108-core` | ✗ `0.1.0` frozen | ✅ `/health/ready`, full payload | ✅ |
+| `pos108-core` | ✗ `0.1.0` frozen | ✅ `/health/ready`, full payload | ✗ drift (~2.5 wks) |
 | `pos108-terminal` | ✅ real, moves | ✅ update check | n/a (installed app) |
-| `pos108-admin` | ✗ frozen | ✗ **none at all** | ⏳ `#543` in review |
-| `pos108-orders` | ✗ frozen | ? not surveyed | ? |
-| `pos108-store` | ✗ `0.0.0` | ? not surveyed | ? |
-| `pos108-sell` | ✗ frozen | ? not surveyed | ? |
+| `pos108-admin` | ✗ frozen | ✗ fake fallback (`builtAt` fixed to `2026-09-01T00:00:00Z`) | ✅ `#543` merged |
+| `pos108-orders` | ✗ frozen | ✗ missing env, fallback tautology | ✗ drift (~1 mo) |
+| `pos108-store` | ✗ `0.0.0` | ✗ static `version.json`, missing `VITE_APP_BUILD` | ✗ drift (~3 wks) |
+| `pos108-sell` | ✗ frozen | ✗ fake fallback (`builtAt` computed on every request) | ✗ drift (~3 wks) |
 | `park108` | ✗ frozen | ? not surveyed | ? |
 | `jh-api` | grandfathered | ? not surveyed | ✅ |
 
-`?` means **not yet surveyed** — not "compliant". Filling those cells is the first task
-this document creates.
+`?` means **not yet surveyed** — not "compliant". The 2026-09-02 survey (#17) proved that
+all four web frontends (`sell`, `admin`, `store`, `orders`) relied on fake fallbacks and
+tautological assertions rather than true injection. Replacing those fallbacks with `"unknown"`
+and requiring real injection in CI is tracked in each repo's issue.
 
 ---
 
